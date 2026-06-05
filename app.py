@@ -140,6 +140,13 @@ def download_submission():
 def status():
     return jsonify(STATE['pipeline_steps'])
 
-if __name__ == '__main__':
-    os.makedirs(os.path.join(BASE, 'outputs'), exist_ok=True)
-    app.run(debug=True, port=5050)
+if __name__ == "__main__":
+    os.makedirs(os.path.join(BASE, "outputs"), exist_ok=True)
+
+    port = int(os.environ.get("PORT", 5050))
+
+    app.run(
+        host="0.0.0.0",
+        port=port,
+        debug=False
+    )
