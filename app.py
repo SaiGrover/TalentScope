@@ -8,7 +8,7 @@ from flask import Flask, render_template, request, jsonify, send_file # type: ig
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(message)s')
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder="template")
 app.config['SECRET_KEY'] = 'hr_talentscope_2024'
 
 STATE = {
