@@ -74,22 +74,21 @@ class ModelTrainer:
     'Logistic Regression': {
         'model': LogisticRegression(max_iter=500, random_state=42, class_weight='balanced'),
         'params': {
-            'C': [0.01,0.1, 1, 10],
-            'solver': ['liblinear', 'lbfgs']
+            'C': [0.1, 1],
+            'solver': ['liblinear']
         }
     },
     'Decision Tree': {
         'model': DecisionTreeClassifier(random_state=42, class_weight='balanced'),
         'params': {
-            'max_depth': [5, 10,20],
-            'min_samples_split': [2,10, 20],
-            'min_samples_leaf' : [1,5,10]
+            'max_depth': [5, 10],
+            'min_samples_split': [10],
+            'min_samples_leaf' : [5]
         }
     },
     'Random Forest': {
-        'model': RandomForestClassifier(random_state=42, class_weight='balanced'),
+        'model': RandomForestClassifier(n_estimators=80, random_state=42, class_weight='balanced'),
         'params': {
-            'n_estimators': [100, 200],
             'max_depth': [10, None]
         }
     },
@@ -108,7 +107,7 @@ class ModelTrainer:
     }
 }
     SLOW_MODELS  = {'SVM', 'KNN'}
-    MAX_SAMPLES  = 3000
+    MAX_SAMPLES  = 2000
 
     def __init__(self):
         self.models      = {}
@@ -121,7 +120,7 @@ class ModelTrainer:
         self.X_val, self.y_val = X_val, y_val
         self.feature_names = self.feature_names or []
 
-        cv  = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
+        cv  = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
         rng = np.random.RandomState(42)
         if len(y_tr) > self.MAX_SAMPLES:
             idx = rng.choice(len(y_tr), self.MAX_SAMPLES, replace=False)

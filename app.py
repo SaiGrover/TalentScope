@@ -1,5 +1,5 @@
 """
-HR TalentScope – Flask Application (fixed datasets, no upload)
+HR TalentScope - Flask Application (fixed datasets, no upload)
 """
 import os, logging, warnings, traceback
 warnings.filterwarnings('ignore')
@@ -24,110 +24,173 @@ STATE = {
 }
 BASE = os.path.dirname(os.path.abspath(__file__))
 
+
+def _load_data_step():
+    from pipeline.data_loader import load_and_profile
+    tdf, tp = load_and_profile(os.path.join(BASE, 'aug_train.csv'))
+    xdf, xp = load_and_profile(os.path.join(BASE, 'aug_test.csv'), is_test=True)
+    STATE['train_data'] = tdf
+    STATE['test_data'] = xdf
+    STATE['pipeline_steps']['data_loaded'] = True
+    return {
+        'train': tp,
+        'test': xp,
+        'message': f'{len(tdf):,} train rows - {len(xdf):,} test rows loaded'
+    }
+
+
+def _eda_step():
+    if STATE['train_data'] is None:
+        raise RuntimeError('Load data first')
+    from pipeline.eda import perform_eda
+    result = perform_eda(STATE['train_data'])
+    STATE['pipeline_steps']['eda_done'] = True
+    return result
+
+
+def _preprocess_step():
+    if STATE['train_data'] is None:
+        raise RuntimeError('Load data first')
+    from pipeline.preprocessor import Preprocessor
+    prep = Preprocessor()
+    X, y, summary, distributions, boxplots = prep.fit_transform(STATE['train_data'])
+    STATE['preprocessor'] = prep
+    STATE['processed_train'] = (X, y)
+    STATE['feature_names'] = prep.feature_names
+    STATE['pipeline_steps']['preprocessing_done'] = True
+    return {
+        'summary': summary,
+        'distributions': distributions,
+        'boxplots': boxplots
+    }
+
+
+def _public_training_results(results):
+    out = {
+        k: {
+            mk: mv for mk, mv in v.items()
+            if mk not in (
+                'roc_fpr', 'roc_tpr', 'pr_prec', 'pr_rec',
+                'confusion_matrix', 'feature_importances'
+            )
+        }
+        for k, v in results.items() if not k.startswith('_')
+    }
+    out['_charts'] = results.get('_charts', {})
+    out['_meta'] = results.get('_meta', {})
+    out['_best_params'] = {
+        model: results[model].get('best_params', {})
+        for model in results if not model.startswith('_')
+    }
+    out['_interpretability'] = results.get('_interpretability', {})
+    return out
+
+
+def _train_step():
+    if not STATE['pipeline_steps']['preprocessing_done']:
+        raise RuntimeError('Run preprocessing first')
+    from pipeline.trainer import ModelTrainer
+    X, y = STATE['processed_train']
+    trainer = ModelTrainer()
+    trainer.feature_names = STATE['feature_names']
+    results = trainer.train_all(X, y)
+    STATE['models'] = trainer.models
+    STATE['results'] = results
+    STATE['pipeline_steps']['training_done'] = True
+    return _public_training_results(results)
+
+
+def _predict_step(model='best'):
+    if not STATE['pipeline_steps']['training_done']:
+        raise RuntimeError('Train models first')
+    if STATE['test_data'] is None:
+        raise RuntimeError('Test data not loaded')
+    from pipeline.predictor import generate_submission
+    sub, meta = generate_submission(
+        STATE['test_data'], STATE['preprocessor'],
+        STATE['models'], STATE['results'], model)
+    out_path = os.path.join(BASE, 'outputs', 'submission.csv')
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    sub.to_csv(out_path, index=False)
+    STATE['pipeline_steps']['prediction_done'] = True
+    return {
+        'meta': meta,
+        'preview': sub.head(10).to_dict(orient='records')
+    }
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
 
+
 @app.route('/api/load-data', methods=['POST'])
 def load_data():
     try:
-        from pipeline.data_loader import load_and_profile
-        tdf, tp = load_and_profile(os.path.join(BASE, 'aug_train.csv'))
-        xdf, xp = load_and_profile(os.path.join(BASE, 'aug_test.csv'), is_test=True)
-        STATE['train_data'] = tdf
-        STATE['test_data']  = xdf
-        STATE['pipeline_steps']['data_loaded'] = True
-        return jsonify({'success': True, 'train': tp, 'test': xp,
-                        'message': f'{len(tdf):,} train rows · {len(xdf):,} test rows loaded'})
+        return jsonify({'success': True, **_load_data_step()})
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/eda', methods=['POST'])
 def run_eda():
     try:
-        if STATE['train_data'] is None:
-            return jsonify({'success': False, 'error': 'Load data first'}), 400
-        from pipeline.eda import perform_eda
-        result = perform_eda(STATE['train_data'])
-        STATE['pipeline_steps']['eda_done'] = True
-        return jsonify({'success': True, **result})
+        return jsonify({'success': True, **_eda_step()})
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/preprocess', methods=['POST'])
 def preprocess():
     try:
-        if STATE['train_data'] is None:
-            return jsonify({'success': False, 'error': 'Load data first'}), 400
-        from pipeline.preprocessor import Preprocessor
-        prep = Preprocessor()
-        X, y, summary, distributions, boxplots = prep.fit_transform(STATE['train_data'])
-        STATE['preprocessor']    = prep
-        STATE['processed_train'] = (X, y)
-        STATE['feature_names']   = prep.feature_names
-        STATE['pipeline_steps']['preprocessing_done'] = True
-        return jsonify({
-            'success': True,
-            'summary': summary,
-            'distributions': distributions,
-            'boxplots': boxplots
-        })
+        return jsonify({'success': True, **_preprocess_step()})
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
 
 @app.route('/api/train', methods=['POST'])
 def train_models():
     try:
-        if not STATE['pipeline_steps']['preprocessing_done']:
-            return jsonify({'success': False, 'error': 'Run preprocessing first'}), 400
-        from pipeline.trainer import ModelTrainer
-        X, y = STATE['processed_train']
-        trainer = ModelTrainer()
-        trainer.feature_names = STATE['feature_names']
-        results = trainer.train_all(X, y)
-        STATE['models']  = trainer.models
-        STATE['results'] = results
-        STATE['pipeline_steps']['training_done'] = True
-        out = {k: {mk: mv for mk, mv in v.items()
-                   if mk not in ('roc_fpr','roc_tpr','pr_prec','pr_rec',
-                                 'confusion_matrix','feature_importances')}
-               for k, v in results.items() if not k.startswith('_')}
-        out['_charts'] = results.get('_charts', {})
-        out['_meta'] = results.get('_meta', {})
-        out['_best_params'] = {
-            model: results[model].get('best_params', {})
-            for model in results if not model.startswith('_')
-        }
-        out['_interpretability'] = results.get('_interpretability', {})
-        return jsonify({'success': True, 'results': out})
+        return jsonify({'success': True, 'results': _train_step()})
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
 @app.route('/api/predict', methods=['POST'])
 def predict():
     try:
-        if not STATE['pipeline_steps']['training_done']:
-            return jsonify({'success': False, 'error': 'Train models first'}), 400
-        if STATE['test_data'] is None:
-            return jsonify({'success': False, 'error': 'Test data not loaded'}), 400
-        from pipeline.predictor import generate_submission
         body = request.get_json(silent=True) or {}
-        sub, meta = generate_submission(
-            STATE['test_data'], STATE['preprocessor'],
-            STATE['models'], STATE['results'], body.get('model', 'best'))
-        out_path = os.path.join(BASE, 'outputs', 'submission.csv')
-        os.makedirs(os.path.dirname(out_path), exist_ok=True)
-        sub.to_csv(out_path, index=False)
-        STATE['pipeline_steps']['prediction_done'] = True
-        return jsonify({'success': True, 'meta': meta,
-                        'preview': sub.head(10).to_dict(orient='records')})
+        return jsonify({'success': True, **_predict_step(body.get('model', 'best'))})
     except Exception as e:
         logger.error(traceback.format_exc())
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/run-pipeline', methods=['POST'])
+def run_pipeline():
+    try:
+        data = _load_data_step()
+        eda = _eda_step()
+        prep = _preprocess_step()
+        train = _train_step()
+        pred = _predict_step('best')
+        return jsonify({
+            'success': True,
+            'data': data,
+            'eda': eda,
+            'preprocess': prep,
+            'train': {'results': train},
+            'predict': pred,
+            'steps': STATE['pipeline_steps'],
+        })
+    except Exception as e:
+        logger.error(traceback.format_exc())
+        return jsonify({'success': False, 'error': str(e), 'steps': STATE['pipeline_steps']}), 500
+
 
 @app.route('/api/download-submission')
 def download_submission():
@@ -136,9 +199,11 @@ def download_submission():
         return jsonify({'error': 'No submission yet'}), 404
     return send_file(p, as_attachment=True, download_name='submission.csv')
 
+
 @app.route('/api/status')
 def status():
     return jsonify(STATE['pipeline_steps'])
+
 
 if __name__ == "__main__":
     os.makedirs(os.path.join(BASE, "outputs"), exist_ok=True)
