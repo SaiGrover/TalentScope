@@ -15,12 +15,8 @@ from sklearn.metrics         import (accuracy_score, precision_score, recall_sco
                                      f1_score, roc_auc_score, confusion_matrix,
                                      roc_curve, precision_recall_curve,
                                      average_precision_score)
-from sklearn.inspection      import permutation_importance
 
 DEFAULT_THRESHOLD = 0.45
-PERM_IMPORTANCE_MAX_ROWS = 500
-PERM_IMPORTANCE_N_REPEATS = 6
-
 # ── Plotly theme ──────────────────────────────────────────────────────────────
 PANEL   = '#141B2D'
 PANEL2  = '#1C2640'
@@ -74,22 +70,22 @@ class ModelTrainer:
     'Logistic Regression': {
         'model': LogisticRegression(max_iter=500, random_state=42, class_weight='balanced'),
         'params': {
-            'C': [0.1, 1],
+            'C': [1],
             'solver': ['liblinear']
         }
     },
     'Decision Tree': {
         'model': DecisionTreeClassifier(random_state=42, class_weight='balanced'),
         'params': {
-            'max_depth': [5, 10],
+            'max_depth': [8],
             'min_samples_split': [10],
             'min_samples_leaf' : [5]
         }
     },
     'Random Forest': {
-        'model': RandomForestClassifier(n_estimators=80, random_state=42, class_weight='balanced'),
+        'model': RandomForestClassifier(n_estimators=40, random_state=42, class_weight='balanced'),
         'params': {
-            'max_depth': [10, None]
+            'max_depth': [10]
         }
     },
     'SVM': {
@@ -106,8 +102,7 @@ class ModelTrainer:
         }
     }
 }
-    SLOW_MODELS  = {'SVM', 'KNN'}
-    MAX_SAMPLES  = 2000
+    MAX_SAMPLES  = 1200
 
     def __init__(self):
         self.models      = {}
@@ -120,7 +115,7 @@ class ModelTrainer:
         self.X_val, self.y_val = X_val, y_val
         self.feature_names = self.feature_names or []
 
-        cv  = StratifiedKFold(n_splits=3, shuffle=True, random_state=42)
+        cv  = StratifiedKFold(n_splits=2, shuffle=True, random_state=42)
         rng = np.random.RandomState(42)
         if len(y_tr) > self.MAX_SAMPLES:
             idx = rng.choice(len(y_tr), self.MAX_SAMPLES, replace=False)
@@ -132,7 +127,7 @@ class ModelTrainer:
             base_model = config['model']
             param_grid = config['params']
 
-            Xt, yt = (X_sm, y_sm) if name in self.SLOW_MODELS else (X_tr, y_tr)
+            Xt, yt = X_sm, y_sm
 
             grid = GridSearchCV(
                 base_model,
@@ -205,18 +200,8 @@ class ModelTrainer:
             if name in self.models and hasattr(self.models[name],'feature_importances_'):
                 self.results[name]['feature_importances'] = self.models[name].feature_importances_.tolist()
 
-        # Permutation importance for LR (model-agnostic)
-        lr = self.models.get('Logistic Regression')
-        if lr is not None:
-            try:
-                pi = permutation_importance(lr, X_val, y_val, n_repeats=5,
-                                            random_state=42, scoring='roc_auc', n_jobs=1)
-                self.results['Logistic Regression']['perm_importances_mean'] = pi.importances_mean.tolist()
-                self.results['Logistic Regression']['perm_importances_std']  = pi.importances_std.tolist()
-            except Exception:
-                pass
-
         # Build LR coefficients for interpretability
+        lr = self.models.get('Logistic Regression')
         lr_coef = None
         if lr is not None and hasattr(lr, 'coef_'):
             lr_coef = lr.coef_[0].tolist()
@@ -233,7 +218,7 @@ class ModelTrainer:
             'overfit_diagnostic':self._chart_overfit(),
             'threshold_tuning':  self._chart_threshold(),
             'cv_scores':         self._chart_cv(),
-            'shap_surrogate':    self._chart_shap_surrogate(X_val, y_val),
+            'shap_surrogate':    None,
         }
 
         best = max((k for k in self.results if not k.startswith('_')),
