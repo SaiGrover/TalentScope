@@ -1175,6 +1175,19 @@ function renderBoxplots(distributions) {
 function showLdr(m='Processing', s='please wait…') { document.getElementById('ldr-txt').textContent=m; document.getElementById('ldr-sub').textContent=s; document.getElementById('loader').classList.add('show'); }
 function hideLdr() { document.getElementById('loader').classList.remove('show'); }
 
+async function apiRequest(url, options = {}) {
+  const res = await fetch(url, options);
+  const contentType = res.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await res.text();
+    const clean = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+    throw new Error(clean ? `Server returned HTML instead of JSON: ${clean.slice(0, 180)}` : `Server returned HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `Request failed with HTTP ${res.status}`);
+  return data;
+}
+
 // ─── Alert ────────────────────────────────────────────────────────────────────
 function showAlert(id, msg, t='ok') {
   const icons = {ok:'✓',err:'✕',info:'ℹ',warn:'⚠'};
@@ -1199,14 +1212,15 @@ function refreshDots(steps) {
     if(steps[k]) { const el=document.querySelector(`[data-s=${s}]`); if(el&&!el.classList.contains('active'))el.classList.add('done'); }
   }
 }
-async function refreshStatus() { try { refreshDots(await (await fetch('/api/status')).json()); } catch(e){} }
+async function refreshStatus() { try { refreshDots(await apiRequest('/api/status')); } catch(e){} }
 
 // ─── Load Data ────────────────────────────────────────────────────────────────
 async function loadData() {
   showLdr('Loading datasets','reading aug_train.csv & aug_test.csv…');
   document.getElementById('load-btn').disabled = true;
+  let ok = false;
   try {
-    const d = await (await fetch('/api/load-data', {method:'POST'})).json();
+    const d = await apiRequest('/api/load-data', {method:'POST'});
     if (d.success) {
       renderProfile(d.train);
       showAlert('data-alerts', d.message, 'ok');
@@ -1214,11 +1228,13 @@ async function loadData() {
       document.getElementById('tst-tag').textContent = '✓ Loaded';
       document.getElementById('trn-info').textContent = d.train.rows.toLocaleString()+' rows · '+d.train.cols+' cols';
       document.getElementById('tst-info').textContent = d.test.rows.toLocaleString()+' rows · '+d.test.cols+' cols';
-      refreshStatus();
+      await refreshStatus();
+      ok = true;
     } else showAlert('data-alerts', d.error, 'err');
   } catch(e) { showAlert('data-alerts', e.message, 'err'); }
   document.getElementById('load-btn').disabled = false;
   hideLdr();
+  return ok;
 }
 function renderProfile(train) {
   document.getElementById('data-profile').style.display = 'block';
@@ -1248,18 +1264,21 @@ const EDA_LBL={target_dist:'Target',missing:'Missing',experience:'Experience',ed
 async function runEDA() {
   showLdr('Running EDA','generating 10 interactive charts…');
   document.getElementById('eda-btn').disabled = true;
+  let ok = false;
   try {
-    const d = await (await fetch('/api/eda',{method:'POST'})).json();
+    const d = await apiRequest('/api/eda',{method:'POST'});
     if(d.success){
       document.getElementById('eda-content').style.display='block';
       renderEdaKPIs(d.stats);
       buildTabs('eda-tabs','eda-area',d.charts,EDA_LBL);
       showAlert('eda-alerts','EDA complete — 10 interactive charts generated','ok');
-      refreshStatus();
+      await refreshStatus();
+      ok = true;
     } else showAlert('eda-alerts',d.error,'err');
   } catch(e){ showAlert('eda-alerts',e.message,'err'); }
   document.getElementById('eda-btn').disabled=false;
   hideLdr();
+  return ok;
 }
 function renderEdaKPIs(s){
   document.getElementById('eda-kpis').innerHTML=`
@@ -1277,9 +1296,10 @@ function renderEdaKPIs(s){
 async function runPrep() {
   showLdr('Preprocessing','engineering features · fitting on train only…');
   document.getElementById('prep-btn').disabled = true;
+  let ok = false;
 
   try {
-    const d = await (await fetch('/api/preprocess', { method: 'POST' })).json();
+    const d = await apiRequest('/api/preprocess', { method: 'POST' });
 
     if (d.success) {
       const s = d.summary;
@@ -1318,7 +1338,8 @@ async function runPrep() {
       renderBoxplots(d.distributions);
 
       showAlert('prep-alerts', `Done — ${s.features_created} features ready`, 'ok');
-      refreshStatus();
+      await refreshStatus();
+      ok = true;
 
     } else {
       showAlert('prep-alerts', d.error, 'err');
@@ -1330,6 +1351,7 @@ async function runPrep() {
 
   document.getElementById('prep-btn').disabled = false;
   hideLdr();
+  return ok;
 }
 
 // ─── Training ─────────────────────────────────────────────────────────────────
@@ -1339,8 +1361,9 @@ const CHART_LBL = {performance:'Performance',roc_curves:'ROC Curves',pr_curves:'
 async function trainModels() {
   showLdr('Training 5 models','80/20 split · evaluating on held-out 20%…');
   document.getElementById('train-btn').disabled=true;
+  let ok = false;
   try{
-    const d=await(await fetch('/api/train',{method:'POST'})).json();
+    const d=await apiRequest('/api/train',{method:'POST'});
     if(d.success){
       renderModelCards(d.results);
       renderMetricsTable(d.results);
@@ -1350,11 +1373,13 @@ async function trainModels() {
       const mt=d.results._meta||{};
       showAlert('train-alerts',`Done — best: <strong>${mt.best_model}</strong> · val: ${mt.val_size} rows`,'ok');
       renderInterpretability(d.results._interpretability, d.results._charts||{});
-      refreshStatus();
+      await refreshStatus();
+      ok = true;
     } else showAlert('train-alerts',d.error,'err');
   }catch(e){showAlert('train-alerts',e.message,'err');}
   document.getElementById('train-btn').disabled=false;
   hideLdr();
+  return ok;
 }
 function renderModelCards(res){
   const names=Object.keys(MC); let best='',ba=0;
@@ -1440,10 +1465,11 @@ function renderInterpretability(interp, charts){
 
 // ─── Prediction ───────────────────────────────────────────────────────────────
 async function runPred(){
+  let ok = false;
   showLdr('Generating predictions','inference on aug_test.csv…');
   try{
     const m=document.getElementById('model-sel').value;
-    const d=await(await fetch('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:m})})).json();
+    const d=await apiRequest('/api/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:m})});
     if(d.success){
       document.getElementById('pred-results').style.display='block';
       const mt=d.meta;
@@ -1451,10 +1477,12 @@ async function runPred(){
       const rows=d.preview.map(r=>`<tr><td class="mono">${r.enrollee_id}</td><td class="mono" style="color:${r.target>.5?'#a78bfa':'var(--accent)'};font-weight:600">${(+r.target).toFixed(4)}</td><td><span class="tag ${r.target>.5?'tag-p':'tag-b'}">${r.target>.5?'JOB SEEKING':'STAYING'}</span></td></tr>`).join('');
       document.getElementById('sub-preview').innerHTML=`<table><thead><tr><th>Enrollee ID</th><th>Target Probability</th><th>Prediction</th></tr></thead><tbody>${rows}</tbody></table>`;
       showAlert('pred-alerts',`Done — <strong>${mt.model_used}</strong> · ${mt.predicted_seekers} seekers (${mt.seek_rate}%)`,'ok');
-      refreshStatus();
+      await refreshStatus();
+      ok = true;
     } else showAlert('pred-alerts',d.error,'err');
   }catch(e){showAlert('pred-alerts',e.message,'err');}
   hideLdr();
+  return ok;
 }
 function dlSub(){ window.location.href='/api/download-submission'; }
 
@@ -1462,13 +1490,13 @@ function dlSub(){ window.location.href='/api/download-submission'; }
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 async function autoPipeline(){
   goTo('data', document.querySelector('[data-s=data]')); await sleep(150);
-  await loadData(); if(!pState.data_loaded) return;
+  if(!await loadData()) return;
   goTo('eda',  document.querySelector('[data-s=eda]'));  await sleep(150);
-  await runEDA();
+  if(!await runEDA()) return;
   goTo('prep', document.querySelector('[data-s=prep]')); await sleep(150);
-  await runPrep();
+  if(!await runPrep()) return;
   goTo('train',document.querySelector('[data-s=train]')); await sleep(150);
-  await trainModels();
+  if(!await trainModels()) return;
   goTo('pred', document.querySelector('[data-s=pred]')); await sleep(150);
   await runPred();
 }
