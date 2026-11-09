@@ -1,0 +1,34 @@
+# TalentScope theme: locked dark, ink and teal. Colours mirror src/talentscope/ui/tokens.py.
+[theme]
+base = "dark"
+primaryColor = "#2fa697"
+backgroundColor = "#0b1115"
+secondaryBackgroundColor = "#18222a"
+textColor = "#e8eef1"
+borderColor = "#24313a"
+linkColor = "#6fcab9"
+codeBackgroundColor = "#121a20"
+font = "Inter:https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+headingFont = "Sora:https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&display=swap"
+codeFont = "'JetBrains Mono':https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap"
+baseRadius = "10px"
+buttonRadius = "10px"
+showWidgetBorder = true
+dataframeHeaderBackgroundColor = "#18222a"
+dataframeBorderColor = "#24313a"
+chartCategoricalColors = ["#2fa697", "#d9634a", "#4f86d8", "#b5842a", "#8b6fd0", "#6aa35f"]
+redColor = "#e5604d"
+orangeColor = "#d9a441"
+greenColor = "#4fbf8f"
+blueColor = "#4f86d8"
+violetColor = "#8b6fd0"
+
+[server]
+headless = true
+runOnSave = false
+
+[browser]
+gatherUsageStats = false
+
+[client]
+toolbarMode = "viewer"
