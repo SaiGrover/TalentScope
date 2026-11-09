@@ -1,0 +1,52 @@
+feature,label,source,mean_abs_shap
+num__EnvironmentSatisfaction,Environment satisfaction,EnvironmentSatisfaction,0.38664452420260587
+num__NumCompaniesWorked,Companies worked,NumCompaniesWorked,0.3611396554752657
+num__YearsSinceLastPromotion,Years since promotion,YearsSinceLastPromotion,0.35284301144410246
+cat__OverTime_No,Overtime = No,OverTime,0.3300153774783503
+cat__OverTime_Yes,Overtime = Yes,OverTime,0.3297830419275084
+num__JobSatisfaction,Job satisfaction,JobSatisfaction,0.32087982990380826
+num__TotalWorkingYears,Total working years,TotalWorkingYears,0.31628979795728335
+num__Age,Age,Age,0.30826950450844365
+num__YearsWithCurrManager,Years with manager,YearsWithCurrManager,0.30330267633566144
+num__JobInvolvement,Job involvement,JobInvolvement,0.2850979016237495
+num__YearsInCurrentRole,Years in current role,YearsInCurrentRole,0.27585271144807977
+num__DistanceFromHome,Distance from home,DistanceFromHome,0.2719857371284209
+num__StockOptionLevel,Stock option level,StockOptionLevel,0.23907983941509542
+cat__BusinessTravel_Travel_Frequently,Business travel = Travel_Frequently,BusinessTravel,0.21854671715708396
+num__RelationshipSatisfaction,Relationship satisfaction,RelationshipSatisfaction,0.2140977713800967
+cat__JobRole_Laboratory Technician,Job role = Laboratory Technician,JobRole,0.21348724581287898
+num__WorkLifeBalance,Work-life balance,WorkLifeBalance,0.19949571504341407
+cat__MaritalStatus_Single,Marital status = Single,MaritalStatus,0.18260970920417832
+cat__Department_Research & Development,Department = Research & Development,Department,0.1624173152086357
+num__DailyRate,Daily rate,DailyRate,0.1478814370030183
+num__TrainingTimesLastYear,Trainings last year,TrainingTimesLastYear,0.1445876440053301
+num__MonthlyIncome,Monthly income,MonthlyIncome,0.12523797653504842
+cat__Department_Sales,Department = Sales,Department,0.12231218941251
+cat__BusinessTravel_Non-Travel,Business travel = Non-Travel,BusinessTravel,0.11873418201507312
+cat__EducationField_Medical,Education field = Medical,EducationField,0.10809680773800966
+cat__JobRole_Research Scientist,Job role = Research Scientist,JobRole,0.0986988402256231
+num__PercentSalaryHike,Salary hike %,PercentSalaryHike,0.09103482490733156
+cat__MaritalStatus_Married,Marital status = Married,MaritalStatus,0.08947834386501838
+num__YearsAtCompany,Years at company,YearsAtCompany,0.08613942989732491
+cat__MaritalStatus_Divorced,Marital status = Divorced,MaritalStatus,0.08162772844024616
+cat__Gender_Female,Gender = Female,Gender,0.06884241112562622
+cat__Gender_Male,Gender = Male,Gender,0.068562776717654
+cat__JobRole_Sales Representative,Job role = Sales Representative,JobRole,0.06269065905665445
+cat__JobRole_Healthcare Representative,Job role = Healthcare Representative,JobRole,0.061387930680727405
+num__PerformanceRating,Performance rating,PerformanceRating,0.05223847542138597
+cat__EducationField_Other,Education field = Other,EducationField,0.05072469186487933
+cat__EducationField_Technical Degree,Education field = Technical Degree,EducationField,0.048230088102011515
+cat__JobRole_Research Director,Job role = Research Director,JobRole,0.04593468695230957
+cat__JobRole_Manufacturing Director,Job role = Manufacturing Director,JobRole,0.04417850530524751
+cat__JobRole_Sales Executive,Job role = Sales Executive,JobRole,0.03770511431233376
+num__JobLevel,Job level,JobLevel,0.03746304510238253
+cat__EducationField_Life Sciences,Education field = Life Sciences,EducationField,0.03415641408074444
+cat__BusinessTravel_Travel_Rarely,Business travel = Travel_Rarely,BusinessTravel,0.023455114524728645
+cat__EducationField_Marketing,Education field = Marketing,EducationField,0.021459270323289995
+num__MonthlyRate,Monthly rate,MonthlyRate,0.014710607860105461
+num__HourlyRate,Hourly rate,HourlyRate,0.013410258404438047
+cat__EducationField_Human Resources,Education field = Human Resources,EducationField,0.010824434637183106
+cat__JobRole_Human Resources,Job role = Human Resources,JobRole,0.00969114382092092
+cat__JobRole_Manager,Job role = Manager,JobRole,0.0063618360826388715
+num__Education,Education level,Education,0.006307154682032514
+cat__Department_Human Resources,Department = Human Resources,Department,0.005864604764008884

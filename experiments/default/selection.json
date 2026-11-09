@@ -1,0 +1,20 @@
+{
+  "combo": "logreg|none",
+  "model": "logreg",
+  "model_name": "Logistic regression",
+  "strategy": "none",
+  "strategy_name": "No rebalancing",
+  "rule": "one_se",
+  "reason": "One-standard-error rule: the best mean CV PR-AUC was 0.662 (Logistic regression, No rebalancing); the simplest configuration within one standard error (0.016) of it was selected.",
+  "best_combo_by_mean": "logreg|none",
+  "one_se_floor": 0.6464973604930051,
+  "cv_pr_auc_mean": 0.6620680620517226,
+  "cv_pr_auc_std": 0.0603050678256789,
+  "threshold": 0.36,
+  "threshold_metric": "f1",
+  "threshold_source": "out-of-fold predictions on the training set (repeated stratified CV)",
+  "params": {
+    "C": 0.2537815508265665
+  },
+  "explainer": "linear"
+}

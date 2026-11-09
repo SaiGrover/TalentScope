@@ -1,0 +1,24 @@
+{
+  "train_set": {
+    "stayed": 986,
+    "left": 190
+  },
+  "fold_train_original": {
+    "stayed": 788,
+    "left": 152
+  },
+  "fold_validation": {
+    "stayed": 198,
+    "left": 38
+  },
+  "after": {
+    "smotenc": {
+      "stayed": 788,
+      "left": 788
+    },
+    "random_oversample": {
+      "stayed": 788,
+      "left": 788
+    }
+  }
+}

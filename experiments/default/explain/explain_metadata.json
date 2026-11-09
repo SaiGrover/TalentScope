@@ -1,0 +1,14 @@
+{
+  "model": "logreg",
+  "output_space": "log-odds",
+  "explainer": "linear",
+  "rows_explained": 294,
+  "base_value": -2.477973385786724,
+  "explained_set": "held-out test set",
+  "kernel_nsamples": null,
+  "permutation": {
+    "set": "held-out test set",
+    "scoring": "average_precision",
+    "n_repeats": 20
+  }
+}

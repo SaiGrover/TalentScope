@@ -1,0 +1,51 @@
+{
+  "experiment_dir": "experiments/default",
+  "selection": {
+    "combo": "logreg|none",
+    "model": "logreg",
+    "model_name": "Logistic regression",
+    "strategy": "none",
+    "strategy_name": "No rebalancing",
+    "rule": "one_se",
+    "reason": "One-standard-error rule: the best mean CV PR-AUC was 0.662 (Logistic regression, No rebalancing); the simplest configuration within one standard error (0.016) of it was selected.",
+    "best_combo_by_mean": "logreg|none",
+    "one_se_floor": 0.6464973604930051,
+    "cv_pr_auc_mean": 0.6620680620517226,
+    "cv_pr_auc_std": 0.0603050678256789,
+    "threshold": 0.36,
+    "threshold_metric": "f1",
+    "threshold_source": "out-of-fold predictions on the training set (repeated stratified CV)",
+    "params": {
+      "C": 0.2537815508265665
+    },
+    "explainer": "linear"
+  },
+  "test_metrics": {
+    "pr_auc": 0.5979101506549032,
+    "roc_auc": 0.8143681626324403,
+    "f1": 0.5301204819277109,
+    "precision": 0.6111111111111112,
+    "recall": 0.46808510638297873,
+    "balanced_accuracy": 0.7057024722198295,
+    "accuracy": 0.8673469387755102,
+    "specificity": 0.9433198380566802,
+    "brier": 0.09705571912872815,
+    "threshold": 0.36,
+    "tp": 22,
+    "fp": 14,
+    "tn": 233,
+    "fn": 25
+  },
+  "versions": {
+    "python": "3.13.11",
+    "scikit-learn": "1.9.1",
+    "imbalanced-learn": "0.14.2",
+    "pandas": "3.0.6",
+    "numpy": "2.5.3",
+    "xgboost": "3.1.3",
+    "lightgbm": "4.6.0",
+    "shap": "0.54.1"
+  },
+  "dataset_sha256": "d11789e1db393cd1d985ca41a0e73a1d405543fb2c0d540a3b4f7d723bca92f7",
+  "created_utc": "2026-11-09T14:22:30Z"
+}
