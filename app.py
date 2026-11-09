@@ -9,7 +9,9 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__, template_folder="template")
-app.config['SECRET_KEY'] = '[REDACTED_FLASK_SECRET]'
+app.config['SECRET_KEY'] = os.getenv('FLASK_SECRET_KEY')
+if not app.config['SECRET_KEY']:
+    raise RuntimeError('FLASK_SECRET_KEY must be set before starting the application')
 
 STATE = {
     'train_data': None, 'test_data': None,
