@@ -1,7 +1,23 @@
+# Python
 __pycache__/
 *.py[cod]
 .venv/
 venv/
 env/
+.pytest_cache/
+.ipynb_checkpoints/
+*.tmp
+
+# Local secrets (the app needs none)
 .env
+.streamlit/secrets.toml
+
+# Experiments launched from the Model laboratory (the committed default run lives in experiments/default)
+experiments/runs/
+logs/
 outputs/
+
+# Editor / tooling
+.claude/
+.vscode/
+.idea/
